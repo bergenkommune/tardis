@@ -6,15 +6,18 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.io.File;
 import java.util.*;
 
 @Component
 @ConfigurationProperties(prefix = "tardis")
 @EnableConfigurationProperties
 public class TardisConfiguration {
-    private String workingDirectory, statusDirectory;
+    private String workingDirectory = new File(System.getProperty("user.dir"), "data").getAbsolutePath();
+    private String statusDirectory = new File(System.getProperty("user.dir"), "status").getAbsolutePath();
 
-    private List<Table> tables;
+    private boolean cron;
+    private List<Table> tables = new ArrayList<>();
     private Map<String, DataSource> dataSourceMap = new HashMap<>();
     private List<DataSourceConfig> dataSources = new ArrayList<>();
 
@@ -26,6 +29,13 @@ public class TardisConfiguration {
         this.workingDirectory = workingDirectory;
     }
 
+    public String getStatusDirectory() {
+        return statusDirectory;
+    }
+
+    public void setStatusDirectory(String statusDirectory) {
+        this.statusDirectory = statusDirectory;
+    }
 
     public List<Table> getTables() {
         return tables;
@@ -77,8 +87,11 @@ public class TardisConfiguration {
         dataSource.setUsername(config.getUsername());
         dataSource.setPassword(config.getPassword());
         dataSource.setAutoCommit(false);
-        dataSource.addDataSourceProperty("implicitCachingEnabled", true);
-        dataSource.addDataSourceProperty("oracle.jdbc.timezoneAsRegion", false);
+
+        for (Map.Entry<String, Object> property : config.getProperties().entrySet()) {
+            dataSource.addDataSourceProperty(property.getKey(), property.getValue());
+        }
+
         dataSourceMap.put(config.getName(), dataSource);
     }
 
@@ -99,8 +112,31 @@ public class TardisConfiguration {
         tables.add(table);
     }
 
+    public boolean isCron() {
+        return cron;
+    }
+
+    public void setCron(boolean cron) {
+        this.cron = cron;
+    }
+
     public static class DataSourceConfig {
         private String name, url, username, password;
+
+        /*
+                                         +--------------------------- seconds (0 - 59) (,/-*)
+                                         |   +----------------------- min (0 - 59) (,/-*)
+                                         |   |   +------------------- hour (0 - 23) (,/-*)
+                                         |   |   |   +--------------- day of month (1 - 31) (,/-*LWC)
+                                         |   |   |   |   +----------- month (0 - 11 or JAN - DEC) (,/-*)
+                                         |   |   |   |   |   +------- day of week (1 - 7) (Sunday=0) (,/-*LC#)
+                                         |   |   |   |   |   |   +--- year (not required) (1970-2099) (,/-*)
+                                         |   |   |   |   |   |   |
+                                         *   *   *   *   *   *   *
+        */
+        private String cronExpression = "0  */5  *   *   *   *   *";
+
+        private Map<String, Object> properties = new HashMap<>();
 
         public String getName() {
             return name;
@@ -132,6 +168,22 @@ public class TardisConfiguration {
 
         public void setPassword(String password) {
             this.password = password;
+        }
+
+        public Map<String, Object> getProperties() {
+            return properties;
+        }
+
+        public void setProperties(Map<String, Object> properties) {
+            this.properties = properties;
+        }
+
+        public String getCronExpression() {
+            return cronExpression;
+        }
+
+        public void setCronExpression(String cronExpression) {
+            this.cronExpression = cronExpression;
         }
     }
 }

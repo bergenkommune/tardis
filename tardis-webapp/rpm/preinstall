@@ -1,0 +1,8 @@
+if [ $1 -gt 1 ] ; then
+    service tardis stop
+fi
+getent group tardis >/dev/null || groupadd -r tardis
+getent passwd tardis >/dev/null || \
+    useradd -r -g tardis -d /home/tardis -s /bin/bash -c "User for tardis" tardis
+
+exit 0

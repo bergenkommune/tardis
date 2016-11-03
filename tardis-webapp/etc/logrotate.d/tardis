@@ -1,0 +1,14 @@
+/var/log/tardis.log {
+    daily
+    size 1
+    extension .log
+    compress
+    rotate 30
+    dateext
+    dateformat -%Y%m%d
+    maxage 30
+    notifempty
+    missingok
+    copytruncate
+}
+

@@ -1,8 +1,19 @@
 language: java
 jdk:
-  - oraclejdk8
-
+- oraclejdk8
 addons:
   apt:
     packages:
-      - rpm
+    - rpm
+deploy:
+  skip_cleanup: true
+  provider: releases
+  api_key:
+    secure: moqfrxsysEf0XGtD9aFtHSfAIXXxek5HuLt8yngBOyu/iGnLEHbEGmvZIAxsQ2fUwvE0nA7RcXoOwK6xvssz8AvtGr64g3LKzIlc0QdR5pbaZnsNTuq0BZ4zxt9V9uOCZQKzd3dtyElqt8TgxyXEauZfLh6pfErVEg+cWANStI1YJZNetzBd0luTb4klngxWqY3eD/CcCDNQ66CHRX/lD42VZAmRvOvTAy9njFqxYv+XqKt0xXjlKVTL8j7/toivOpefqGsPxnhpl1hikbW957zjwl2muiTQA84OKEEUQgQwSwwJ2uKCmTwMEMTc5tsy3IL2LxGHiT/8NNJAacj9l6VLfoM3eisbfIUA40VAUskv7sOB+JDI31JluQuYSKBLT6f/DtKOhPX7RJ0mF4w345nwnXgKifhLuV4w3XfbfVR7kFYW2tO/EArhTDggKiqdQj434EFmew2TWaeFwSgoEXDCKPZgQqNnThmIrGnSLEpc5lp6MNJoTrwTrngrKMXZoD2ioIarkWcvQ+yCCyzw5FeYBwN0OhLxkSR2LtCYi5NcdiEueCasRa6n2siUDcS+XYF9gH1XLeCAV3FIynNO6K32ukqciQKn9ZrzH6oOzCsB5SRYdMxm5OyhsHkgvpJB/JkwucG1+S8IjqK9ikQelf8UlDPQe6EXO/rkt9p1zQ0=
+  file:
+    - "tardis-core/target/tardis-core*.jar"
+    - "tardis-webapp/target/tardis.jar"
+    - "tardis-webapp/target/rpm/tardis/RPMS/noarch/tardis*.rpm"
+  file_glob: true 
+  on:
+    tags: true

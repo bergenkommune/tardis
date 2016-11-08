@@ -16,7 +16,8 @@ public class TardisConfiguration {
     private String workingDirectory = new File(System.getProperty("user.dir"), "data").getAbsolutePath();
     private String statusDirectory = new File(System.getProperty("user.dir"), "status").getAbsolutePath();
 
-    private boolean cron;
+    private boolean cron = true;
+
     private List<Table> tables = new ArrayList<>();
     private Map<String, DataSource> dataSourceMap = new HashMap<>();
     private List<DataSourceConfig> dataSources = new ArrayList<>();

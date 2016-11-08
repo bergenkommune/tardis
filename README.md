@@ -209,9 +209,35 @@ For example:
 Please note that all dates in the URL scheme are in UTC. Dates found in your data will be formatted according to your 
 locale. 
 
+## Output data format
+
+Tardis will output data in its own format, shown above. Each line in the returned data is a valid json document, and must be 
+parsed by itself. The reason behind this non-standard use of json is that large change sets can eat up a lot of memory if you parse the entire
+set in one big bite. With the tardis data format, you can simply loop through the results and parse one line at the
+time. 
+
+Each line in the returned data is a json document that contains the following attributes: 
+ - `changeType`: enum containing either `add`, `change` or `delete`
+ - `oldRecord`: if `changeType = delete`, it contains the deleted record. If `changeType = change`, it contains
+   the record before the change. It is not present when `changeType = add`.
+ - `newRecord`: if `changeType = add`, it contains the  added record. If `changeType = change`, it contains
+   the record after the change. It is not present when `changeType = delete`.
+   
+The records themselves contain the columns from the associated sql query, in the order they are listed in the query. 
+The JDBC driver determines the case of the column names. 
 
 ## Directory structure
 
+### /opt/tardis
+
+The application home directory. Contains the following files: 
+
+ - `tardis.jar` - the application itself
+ - `application.yml` - your data source and table configuration.
+ - `tardis.conf` - default configuration for the init script. Do not edit. Instead, add your own `override.conf`.
+ - `override.conf` - loaded by the init script. Allows you to override any environment variables such as `JAVA_HOME`. 
+    See http://docs.spring.io/spring-boot/docs/current/reference/html/deployment-install.html#deployment-script-customization-when-it-runs
+    for details.
 
 ### /opt/tardis/data
 
@@ -226,3 +252,12 @@ as this will interfere with the operation of Tardis.
 ### /opt/tardis/lib
 
 Put jdbc drivers or other jars in this directory, and they'll be available for Tardis. 
+
+### /opt/tardis/status
+
+Tardis will output status information for each data source in this directory. 
+
+ - `/opt/tardis/status/<dataSourceName>.ok` touched at the end of every dump of `dataSourceName` that succeeds
+ - `/opt/tardis/status/<dataSourceName>.status` contains the text "OK" or "ERROR" depending on the result of the last dump
+
+  

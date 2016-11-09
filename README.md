@@ -68,7 +68,7 @@ is written in YAML format. The file must be readable by the `tardis` user. As it
 sources, it may be a good idea to make sure that the file is not readable by anyone else. 
 
 ### Data sources
-A data source configuration provides the connection to the database, specifies the 
+A data source configuration provides the connection to the database. Tardis supports multiple data sources. 
 
 Configuration key: `tardis.dataSources` 
 

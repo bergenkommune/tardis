@@ -9,7 +9,7 @@
     <parent>
         <groupId>no.kommune.bergen.tardis</groupId>
         <artifactId>tardis-parent</artifactId>
-        <version>1.1</version>
+        <version>1.2-SNAPSHOT</version>
     </parent>
     <artifactId>tardis-core</artifactId>
     <name>tardis-core</name>

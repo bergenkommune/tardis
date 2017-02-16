@@ -17,7 +17,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class RestService {
     @Autowired
     private Tardis tardis;
-    private Logger log = LoggerFactory.getLogger(RestService.class);
+    private Logger LOG = LoggerFactory.getLogger(RestService.class);
 
     @RequestMapping(method = RequestMethod.GET, value = "/{dataSourceName}/{tableName}")
     public void getChanges(HttpServletResponse response,
@@ -39,6 +39,7 @@ public class RestService {
                 throw new IllegalArgumentException("You must provide either fromRevision and toRevision or fromDate and toDate query params");
             }
         } catch (Exception e) {
+            LOG.error("Couldn't get changes", e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }

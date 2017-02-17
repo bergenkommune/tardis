@@ -5,7 +5,7 @@
 
     <groupId>no.kommune.bergen.tardis</groupId>
     <artifactId>tardis-parent</artifactId>
-    <version>1.2</version>
+    <version>1.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>tardis-parent</name>

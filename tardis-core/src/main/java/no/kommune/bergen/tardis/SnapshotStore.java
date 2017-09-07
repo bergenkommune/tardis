@@ -51,7 +51,7 @@ class SnapshotStore {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (null != reader) reader.release();
+            if (null != reader) reader.close();
         }
     }
 
@@ -135,7 +135,7 @@ class SnapshotStore {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (reader != null) reader.release();
+            if (reader != null) reader.close();
         }
     }
 
@@ -167,7 +167,7 @@ class SnapshotStore {
             throw new RuntimeException(e);
         } finally {
 
-            if (null != reader) reader.release();
+            if (null != reader) reader.close();
         }
     }
 

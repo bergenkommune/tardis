@@ -3,21 +3,17 @@ package no.kommune.bergen.tardis;
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.Scanner;
 
-public class MyDataSourceHealthIndicator extends AbstractHealthIndicator {
+public class SynchronizationHealthIndicator extends AbstractHealthIndicator {
 
     private final TardisConfiguration.DataSourceConfig dataSourceConfig;
     private final TardisConfiguration config;
 
-    public MyDataSourceHealthIndicator(TardisConfiguration.DataSourceConfig dataSourceConfig, TardisConfiguration config) {
+    public SynchronizationHealthIndicator(TardisConfiguration.DataSourceConfig dataSourceConfig, TardisConfiguration config) {
         this.dataSourceConfig = dataSourceConfig;
         this.config = config;
     }
@@ -25,30 +21,10 @@ public class MyDataSourceHealthIndicator extends AbstractHealthIndicator {
     @Override
     protected void doHealthCheck(Health.Builder builder) {
         try {
-            DatabaseMetaData metaData = checkIfDataSourceIsUp();
-            try {
-                checkLastSync();
-                builder.up()
-                        .withDetail("product", metaData.getDatabaseProductName())
-                        .withDetail("version", metaData.getDatabaseProductVersion());
-            } catch (Exception e) {
-                builder.status("WARN")
-                        .withDetail("warning-message", e.getMessage())
-                        .build();
-            }
+            checkLastSync();
+            builder.up().build();
         } catch (Exception e) {
-            builder.outOfService().withException(e);
-        }
-    }
-
-
-    private DatabaseMetaData checkIfDataSourceIsUp() throws SQLException {
-        DataSource dataSource = config.getDataSource(dataSourceConfig.getName());
-        try (Connection conn = dataSource.getConnection()) {
-            final DatabaseMetaData metaData = conn.getMetaData();
-            return metaData;
-        } catch (Exception e) {
-            throw e;
+            builder.outOfService().withException(e).build();
         }
     }
 
@@ -66,7 +42,7 @@ public class MyDataSourceHealthIndicator extends AbstractHealthIndicator {
     }
 
     private void checkOkFile() throws Exception {
-        File okFile = getFile(dataSourceConfig.getName() + ".status");
+        File okFile = getFile(dataSourceConfig.getName() + ".ok");
         Date okDate = new Date(okFile.lastModified());
         Long age = Long.parseLong(dataSourceConfig.getAge());
 

@@ -11,8 +11,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.util.Date;
+import java.util.Scanner;
 import java.util.Set;
 
 
@@ -23,42 +27,20 @@ public class DatasourceHealth {
 
     public static class HealthIndicatorFactory {
         @Autowired
-        TardisConfiguration config;
+        HealthAggregator healthAggregator;
 
         @Autowired
-        HealthAggregator healthAggregator;
+        TardisConfiguration config;
 
         @Bean
         protected HealthIndicator datasourceHealth() {
             CompositeHealthIndicator compositeHealthIndicator = new CompositeHealthIndicator(healthAggregator);
 
-            Set<String> dataSourceNames = config.getDataSourceNames();
-            for (String dataSourceName : dataSourceNames) {
-                DataSource dataSource = config.getDataSource(dataSourceName);
-                compositeHealthIndicator.addHealthIndicator(dataSourceName, new MyDataSourceHealthIndicator(dataSource));
+            for (TardisConfiguration.DataSourceConfig dataSourceConfig : config.getDataSources()) {
+                compositeHealthIndicator.addHealthIndicator(dataSourceConfig.getName(), new MyDataSourceHealthIndicator(dataSourceConfig, config));
             }
 
             return compositeHealthIndicator;
-        }
-
-        private class MyDataSourceHealthIndicator extends AbstractHealthIndicator {
-            private final DataSource dataSource;
-
-            public MyDataSourceHealthIndicator(DataSource dataSource) {
-                this.dataSource = dataSource;
-            }
-
-            @Override
-            protected void doHealthCheck(Health.Builder builder) throws Exception {
-                try (Connection conn = dataSource.getConnection()) {
-                    final DatabaseMetaData metaData = conn.getMetaData();
-                    builder.up()
-                            .withDetail("product", metaData.getDatabaseProductName())
-                            .withDetail("version", metaData.getDatabaseProductVersion());
-                } catch (Exception e) {
-                    builder.outOfService().withException(e);
-                }
-            }
         }
     }
 }

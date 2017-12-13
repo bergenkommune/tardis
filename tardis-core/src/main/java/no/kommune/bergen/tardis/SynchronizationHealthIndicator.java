@@ -2,6 +2,7 @@ package no.kommune.bergen.tardis;
 
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,7 +31,9 @@ public class SynchronizationHealthIndicator extends AbstractHealthIndicator {
 
     private void checkLastSync() throws Exception {
         checkStatusFile();
-        checkOkFile();
+        if (!StringUtils.isEmpty(dataSourceConfig.getAge())) {
+            checkOkFile();
+        }
     }
 
     private void checkStatusFile() throws Exception {

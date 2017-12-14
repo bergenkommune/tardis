@@ -79,7 +79,7 @@ Configuration key: `tardis.dataSources`
     sql user. 
  - `password`: the password of the database user. The password must be entered in clear text, so make sure to 
     protect the `application.yml` file so that unauthorized people cannot read it. 
- - `age`: maximum age of the `<dataSourceName>.ok` file (in milliseconds). Used in health-check since release 1.5.
+ - `age`: maximum allowed age of the `<dataSourceName>.ok` file (in milliseconds). Used in health-check in release 1.5.
  - `cronExpression`: A cron expression that defines when tables in this data source will be dumped into tardis, e.g., 
    `0 45 05-17 *  *  *` which will dump the contents at 45 minutes, 0 seconds after each hour in the time period
     05 in the morning until 17 in the afternoon, every day. See 

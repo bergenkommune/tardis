@@ -219,12 +219,17 @@ The custom Health Indicator is using the `<dataSourceName>.ok` (if `age` is conf
     
 ## Output data format
 
-Tardis will output data in its own format, shown above. Each line in the returned data is a valid json document, and must be 
-parsed by itself. The reason behind this non-standard use of json is that large change sets can eat up a lot of memory if you parse the entire
-set in one big bite. With the tardis data format, you can simply loop through the results and parse one line at the
-time. 
+By default, Tardis will output data in newline delimited json format, as shown above. Each line in the returned data is a valid json document, and must be 
+parsed by itself. This use json is called ndjson (http://ndjson.org/) and allows the client to reduce memory consumption compared to parsing the entire array in one go.
 
-Each line in the returned data is a json document that contains the following attributes: 
+To get the data in regular json, either append _&format=json_ to the url or set the accept header in the request to accept: application/json.  
+The output is then a single json array, consisting of the same json documents as in the ndjson format.  Note that the array may be empty.
+
+To explicitly request the ndjson format, either append _&format=ndjson_ to the url or set the accept header in the request to accept: application/x-ndjson.  
+
+If the return format is not specified, or set to one of _text/plain_, _text/*_, or _*/*_, the data is returned in the default ndjson format, but with a content-type of _text/plain_ for backward compatibility. 
+
+The json documents have the following attributes: 
  - `changeType`: enum containing either `add`, `change` or `delete`
  - `oldRecord`: if `changeType = delete`, it contains the deleted record. If `changeType = change`, it contains
    the record before the change. It is not present when `changeType = add`.
@@ -268,4 +273,4 @@ Tardis will output status information for each data source in this directory.
  - `/opt/tardis/status/<dataSourceName>.ok` touched at the end of every dump of `dataSourceName` that succeeds
  - `/opt/tardis/status/<dataSourceName>.status` contains the text "OK" or "ERROR" depending on the result of the last dump
 
-  
+ 

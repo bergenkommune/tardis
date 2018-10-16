@@ -122,7 +122,7 @@ public class TardisConfiguration {
     }
 
     public static class DataSourceConfig {
-        private String name, url, username, password;
+        private String name, url, username, password, age;
 
         /*
                                          +--------------------------- seconds (0 - 59) (,/-*)
@@ -185,6 +185,14 @@ public class TardisConfiguration {
 
         public void setCronExpression(String cronExpression) {
             this.cronExpression = cronExpression;
+        }
+
+        public String getAge() {
+            return age;
+        }
+
+        public void setAge(String age) {
+            this.age = age;
         }
     }
 }

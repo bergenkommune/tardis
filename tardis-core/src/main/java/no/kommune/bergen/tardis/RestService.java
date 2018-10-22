@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StopWatch;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpServerErrorException;
 
@@ -14,7 +15,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.DateFormat;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -59,6 +62,32 @@ public class RestService {
     @ResponseBody
     public String log(HttpServletResponse response) {
         return tardis.log();
+    }
+
+
+    @RequestMapping(method = RequestMethod.POST, value = "/optimize", produces = "text/plain; charset=utf-8")
+    @ResponseBody
+    public String optimizeStorage(HttpServletResponse response) throws IOException {
+
+        LOG.info("Storage optimization starting");
+
+        try{
+            StopWatch watch = new StopWatch();
+            watch.start();
+
+            Properties properties = tardis.optimizeStorage();
+            watch.stop();
+
+            String message = String.format("Storage optimization finished in %.00f seconds", watch.getTotalTimeSeconds());
+            LOG.info(message);
+            LOG.debug(String.format("Storage optimization stats: %s", Arrays.toString(properties.entrySet().toArray())));
+            return message;
+
+        } catch (Exception e) {
+            LOG.error("Couldn't get changes", e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            return null;
+        }
     }
 
 

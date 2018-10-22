@@ -16,7 +16,6 @@ import java.util.Map;
 
 @Component
 public class ChangeLogCreator {
-    private ByteArrayOutputStream out;
 
     @Autowired
     private SnapshotStore snapshotStore;
@@ -39,31 +38,31 @@ public class ChangeLogCreator {
         try {
             JsonGenerator g = createJsonGenerator(out);
 
-            FilteredLinesReader deleted = new FilteredLinesReader(new InputStreamReader(new ByteArrayInputStream(diff), "UTF-8"), "-{");
-            FilteredLinesReader added = new FilteredLinesReader(new InputStreamReader(new ByteArrayInputStream(diff), "UTF-8"), "+{");
+            try(FilteredLinesReader deleted = new FilteredLinesReader(new InputStreamReader(new ByteArrayInputStream(diff), "UTF-8"), "-{");
+                FilteredLinesReader added = new FilteredLinesReader(new InputStreamReader(new ByteArrayInputStream(diff), "UTF-8"), "+{")) {
 
-            String deletedLine = deleted.readLine();
-            String addedLine = added.readLine();
+                String deletedLine = deleted.readLine();
+                String addedLine = added.readLine();
 
-            while (addedLine != null || deletedLine != null) {
-                Map<String, Object> deletedRecord = getRecord(deletedLine);
-                Map<String, Object> addedRecord = getRecord(addedLine);
+                while (addedLine != null || deletedLine != null) {
+                    Map<String, Object> deletedRecord = getRecord(deletedLine);
+                    Map<String, Object> addedRecord = getRecord(addedLine);
 
-                int compareResult = compareRecords(deletedRecord, addedRecord, primaryKeyColumns);
+                    int compareResult = compareRecords(deletedRecord, addedRecord, primaryKeyColumns);
 
-                if (compareResult == 0) {
-                    generateChangedRecord(g, deletedLine, addedLine);
-                    addedLine = added.readLine();
-                    deletedLine = deleted.readLine();
-                } else if (compareResult > 0) {
-                    generateAddedRecord(g, addedLine);
-                    addedLine = added.readLine();
-                } else {
-                    generateDeletedRecord(g, deletedLine);
-                    deletedLine = deleted.readLine();
+                    if (compareResult == 0) {
+                        generateChangedRecord(g, deletedLine, addedLine);
+                        addedLine = added.readLine();
+                        deletedLine = deleted.readLine();
+                    } else if (compareResult > 0) {
+                        generateAddedRecord(g, addedLine);
+                        addedLine = added.readLine();
+                    } else {
+                        generateDeletedRecord(g, deletedLine);
+                        deletedLine = deleted.readLine();
+                    }
                 }
             }
-
             g.writeRaw("\n");
             g.close();
         } catch (Exception e) {

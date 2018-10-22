@@ -1,13 +1,16 @@
 package no.kommune.bergen.tardis;
 
+import org.eclipse.jgit.api.GarbageCollectCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.RawTextComparator;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -25,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.Properties;
 
 @Component
 class SnapshotStore {
@@ -153,16 +157,18 @@ class SnapshotStore {
             reader = git.getRepository().newObjectReader();
             ObjectId fromCommit = resolveObjectId(fromRevision, reader);
             ObjectId toCommit = resolveObjectId(toRevision, reader);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-            git.diff()
-                    .setOutputStream(out)
-                    .setPathFilter(PathFilter.create(filename))
-                    .setOldTree(createTreeIterator(fromCommit, reader))
-                    .setNewTree(createTreeIterator(toCommit, reader))
-                    .call();
+            try(ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            return out.toByteArray();
+                git.diff()
+                        .setOutputStream(out)
+                        .setPathFilter(PathFilter.create(filename))
+                        .setOldTree(createTreeIterator(fromCommit, reader))
+                        .setNewTree(createTreeIterator(toCommit, reader))
+                        .call();
+
+                return out.toByteArray();
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -180,22 +186,38 @@ class SnapshotStore {
     private RevCommit getCommitBefore(Date at, ObjectReader reader) throws Exception {
         long atSeconds = at.getTime() / 1000L;
         RevWalk walk = new RevWalk(reader);
-        walk.markStart(walk.parseCommit(resolveObjectId("HEAD", reader)));
 
-        for (RevCommit commit : walk)
-            if (commit.getCommitTime() <= atSeconds) return commit;
+        try {
+            walk.markStart(walk.parseCommit(resolveObjectId("HEAD", reader)));
 
+            for (RevCommit commit : walk) {
+                if (commit.getCommitTime() <= atSeconds) return commit;
+            }
+        } finally {
+            walk.dispose();
+        }
         return getInitialCommit(reader);
     }
 
     private RevCommit getInitialCommit(ObjectReader reader) throws Exception {
         RevWalk revWalk = new RevWalk(git.getRepository());
-        return revWalk.parseCommit(resolveObjectId("initial", reader));
+        RevCommit initial = revWalk.parseCommit(resolveObjectId("initial", reader));
+        revWalk.dispose();
+        return initial;
     }
 
     private ObjectId resolveObjectId(Object revision, ObjectReader reader) throws Exception {
         if (revision instanceof String) return git.getRepository().resolve((String) revision);
         if (revision instanceof Date) return getCommitBefore((Date) revision, reader).getId();
         throw new IllegalArgumentException("Revision must be either String or Date");
+    }
+
+    public Properties garbageCollect() {
+        GarbageCollectCommand gc = git.gc();
+        try {
+            return gc.call();
+        } catch (GitAPIException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

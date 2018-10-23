@@ -10,7 +10,6 @@ import org.eclipse.jgit.diff.RawTextComparator;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
-import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -19,6 +18,8 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +35,9 @@ import java.util.Properties;
 class SnapshotStore {
 
     private Git git;
+
+    private Logger LOG = LoggerFactory.getLogger(SnapshotStore.class);
+
 
     public String log() {
         StringBuilder log = new StringBuilder();
@@ -115,8 +119,15 @@ class SnapshotStore {
     public void commit(String message) {
         try {
             Status status = git.status().call();
-            if (status.isClean()) return;
-            git.commit().setMessage(message).call();
+
+            status.getMissing().forEach(f->LOG.warn("The file {} was expected by Tardis but is missing on disk. It can be recovered using 'git checkout -- {}'", f, f));
+            status.getRemoved().forEach(f->LOG.warn("The file {} has been removed outside of Tardis (using 'git rm'?)", f));
+            status.getUntracked().forEach(f->LOG.warn("The file {} exists in the workspace but is unknown to Tardis. It should probably be deleted or moved elsewhere.", f));
+
+            boolean hasAnythingToCommit = !status.getChanged().isEmpty() || !status.getAdded().isEmpty() || !status.getModified().isEmpty();
+            if (hasAnythingToCommit) {
+                git.commit().setMessage(message).call();
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -1,5 +1,6 @@
 package no.kommune.bergen.tardis;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
@@ -42,12 +43,28 @@ public class ScheduledTaskConfiguration implements SchedulingConfigurer {
                             touchFile(datasourceName + ".ok");
                             log.info("Export " + datasourceName + " finished");
                         } catch (Exception e) {
-                            log.error(datasourceName + " feilet.", e);
+                            log.error(datasourceName + " failed.", e);
                             writeStatus(datasourceName + ".status", true);
                         }
                     },
                     new CronTrigger(datasource.getCronExpression())
             );
+        }
+
+        if (StringUtils.isNotEmpty(config.getOptimizeCron())) {
+            log.info("Enabling scheduling for optimization with cron expression " + config.getOptimizeCron());
+
+            taskRegistrar.addTriggerTask(
+                    () -> {
+                        try {
+                            log.info("Tardis optimization starting");
+                            tardis.optimizeStorage();
+                            log.info("Tardis optimization finished");
+                        } catch (Exception e) {
+                            log.error("Tardis optimization (git gc) failed", e);
+                        }
+                    },
+                    new CronTrigger(config.getOptimizeCron()));
         }
     }
 

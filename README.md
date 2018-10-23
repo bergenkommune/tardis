@@ -123,11 +123,27 @@ Configuration key: `tardis.tables`
  - `primaryKeys`: a comma separated list of primary key columns. If you have more than one column, list the columns
    in the same order as in the `orderBy` clause above.
 
+
+### Optimization
+
+Tardis builds on Git and requires garbage collection on the repository ('git gc') to maintain good performance as
+the number of commits grow.  Tardis has to iterate through the commits to find the relevant ones for 
+the requested period, and without garbage collection, each commit is a separate file on disk, slowing down the process. 
+
+There are two mechanisms for invoking the garbage collection.
+* For automatic garbage collection, configure a cron expression in the `tardis.optimizeCron` configuration key, e.g. specify `tardis.optimizeCron: 0 0 2 ? * SUN` to run the garbage collection every Sunday at 2 AM.  If this key is not set, garbage collections does not run automatically.
+* The garbage collection can be invoked manually as shown in the next section. 
+           
+Tardis will continue to service incoming requests even as the garbage collection is running.
+
+
 ### Complete configuration file
 
 #### `/opt/tardis/application.yml` 
     
     tardis:
+      optimizeCron: 0 0 2 ? * SUN
+    
       tables:
         - name: emp
           dataSourceName: hr
@@ -217,6 +233,14 @@ Spring Boot includes a health endpoint which provides basic application health i
     
 The custom Health Indicator is using the `<dataSourceName>.ok` (if `age` is configured) and `<dataSourceName>.status` for checking the status of the last synchronization job.
     
+### Manually invoking optimization
+
+To invoke the optimization (git garbage collection) on demand, post to the /optimize endpoint, e.g.
+
+    curl -X POST 'http://localhost:8080/optimize'
+
+The call will return when the garbage collection is complete.  This can take several minutes. 
+ 
 ## Output data format
 
 By default, Tardis will output data in newline delimited json format, as shown above. Each line in the returned data is a valid json document, and must be 

@@ -15,7 +15,7 @@ import java.util.*;
 public class TardisConfiguration {
     private String workingDirectory = new File(System.getProperty("user.dir"), "data").getAbsolutePath();
     private String statusDirectory = new File(System.getProperty("user.dir"), "status").getAbsolutePath();
-
+    private String optimizeCron = null;
     private boolean cron = true;
 
     private List<Table> tables = new ArrayList<>();
@@ -119,6 +119,14 @@ public class TardisConfiguration {
 
     public void setCron(boolean cron) {
         this.cron = cron;
+    }
+
+    public String getOptimizeCron() {
+        return optimizeCron;
+    }
+
+    public void setOptimizeCron(String optimizeCron) {
+        this.optimizeCron = optimizeCron;
     }
 
     public static class DataSourceConfig {

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.OutputStream;
 import java.util.Date;
+import java.util.Properties;
 
 @Component
 public class Tardis {
@@ -65,4 +66,7 @@ public class Tardis {
         this.changeLogCreator = changeLogCreator;
     }
 
+    public Properties optimizeStorage() {
+        return snapshotStore.garbageCollect();
+    }
 }

@@ -121,10 +121,11 @@ class SnapshotStore {
             Status status = git.status().call();
 
             status.getMissing().forEach(f->LOG.warn("The file {} was expected by Tardis but is missing on disk. It can be recovered using 'git checkout -- {}'", f, f));
-            status.getRemoved().forEach(f->LOG.warn("The file {} has been removed outside of Tardis (using 'git rm'?)", f));
+            status.getRemoved().forEach(f->LOG.warn("The file {} has been marked for removal from Tardis using an external tool (using 'git rm'?)", f));
+            status.getModified().forEach(f->LOG.warn("The file {} has been modified outside of Tardis. The changes will not be committed. The file can be reverted using 'git checkout -- {}'", f, f));
             status.getUntracked().forEach(f->LOG.warn("The file {} exists in the workspace but is unknown to Tardis. It should probably be deleted or moved elsewhere.", f));
 
-            boolean hasAnythingToCommit = !status.getChanged().isEmpty() || !status.getAdded().isEmpty() || !status.getModified().isEmpty();
+            boolean hasAnythingToCommit = !status.getChanged().isEmpty() || !status.getAdded().isEmpty();
             if (hasAnythingToCommit) {
                 git.commit().setMessage(message).call();
             }

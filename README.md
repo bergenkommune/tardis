@@ -106,6 +106,8 @@ a table or a view (or even just an ad-hoc sql query) in your database, as long a
  - The query must be deterministic. If the underlying data has not changed, the query must return the same data, in
    the same column and row order every time you run it. This means that it is highly recommended to specify every 
    single column you want instead of using `select *`. 
+ - It is rcommended that queries with self-referencing values should include columns that impact the natural order of processing in your order by clause even if they are not part of the query output.
+   Otherwise the client will need to sort the data by `change_type` to ensure that new rows are processed before those that have been modified.
 
 Please note that if you change the columns in a query, Tardis will interpret this as a change to every row. This means
 that if you ask Tardis for any changes in a table right before and right after you added or removed a column from 
@@ -243,16 +245,17 @@ The call will return when the garbage collection is complete.  This can take sev
  
 ## Output data format
 
-By default, Tardis will output data in newline delimited json format, as shown above. Each line in the returned data is a valid json document, and must be 
-parsed by itself. This use json is called ndjson (http://ndjson.org/) and allows the client to reduce memory consumption compared to parsing the entire array in one go.
+Tardis can deliver data either as a regular json, [RFC4627](https://tools.ietf.org/html/rfc4627), 
+or as json objects separated by a `newline` character in a custom format, see (http://ndjson.org/). 
+The json format will return an empty array if there has been no change in the queried table.
+The ndjson format is very useful if you wish to parse one object at a time rather than an entire json array.
 
-To get the data in regular json, either append _&format=json_ to the url or set the accept header in the request to accept: application/json.  
-The output is then a single json array, consisting of the same json documents as in the ndjson format.  Note that the array may be empty.
-
-To explicitly request the ndjson format, either append _&format=ndjson_ to the url or set the accept header in the request to accept: application/x-ndjson.  
-
-If the return format is not specified, or set to one of _text/plain_, _text/*_, or _*/*_, the data is returned in the default ndjson format, but with a content-type of _text/plain_ for backward compatibility. 
-
+Initially Tardis only supported ndjson. As such this is still used if no return format is specified, or the accept header is set to _text/plain_, _text/*_, or _*/*_. 
+In such instances the content-type within the response header is set to _text/plain_. This ensures backwards compatibility with earlier versions of Tardis.
+Moving forward new consumers of Tardis should **ALWAYS** specify a desired output format.
+The preferred method is to set the accept header to _application/json_ or _application/x-ndjson_.
+For applications that can't use this approach you can append the query parameter _format=json_ or _format=ndjson_ to the url. 
+ 
 The json documents have the following attributes: 
  - `changeType`: enum containing either `add`, `change` or `delete`
  - `oldRecord`: if `changeType = delete`, it contains the deleted record. If `changeType = change`, it contains

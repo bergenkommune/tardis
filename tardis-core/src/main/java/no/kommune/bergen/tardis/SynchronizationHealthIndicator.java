@@ -6,6 +6,8 @@ import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.Scanner;
 
@@ -49,10 +51,15 @@ public class SynchronizationHealthIndicator extends AbstractHealthIndicator {
         Date okDate = new Date(okFile.lastModified());
         Long age = Long.parseLong(dataSourceConfig.getAge());
 
-        if ((System.currentTimeMillis() - okDate.getTime()) > age) {
+        if ((System.currentTimeMillis() - okDate.getTime()) > age && !isWeekend(LocalDate.now())) {
             throw new Exception("The synchronization for " + dataSourceConfig.getName() + " has not succeeded for a while. "
                     + dataSourceConfig.getName() + ".status is more than " + age + " milliseconds old");
         }
+    }
+
+    private boolean isWeekend(LocalDate date) {
+        DayOfWeek d = date.getDayOfWeek();
+        return d == DayOfWeek.SATURDAY || d == DayOfWeek.SUNDAY;
     }
 
     private File getFile(String filename) {

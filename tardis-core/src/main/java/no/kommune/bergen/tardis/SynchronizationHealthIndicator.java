@@ -13,32 +13,32 @@ import java.util.Scanner;
 
 public class SynchronizationHealthIndicator extends AbstractHealthIndicator {
 
-    private final TardisConfiguration.DataSourceConfig dataSourceConfig;
     private final TardisConfiguration config;
 
-    public SynchronizationHealthIndicator(TardisConfiguration.DataSourceConfig dataSourceConfig, TardisConfiguration config) {
-        this.dataSourceConfig = dataSourceConfig;
+    public SynchronizationHealthIndicator(TardisConfiguration config) {
         this.config = config;
     }
 
     @Override
     protected void doHealthCheck(Health.Builder builder) {
         try {
-            checkLastSync();
-            builder.up().build();
+            for (TardisConfiguration.DataSourceConfig dataSourceConfig : config.getDataSources()) {
+                checkLastSync(dataSourceConfig);
+                builder.up().build();
+            }
         } catch (Exception e) {
             builder.outOfService().withException(e).build();
         }
     }
 
-    private void checkLastSync() throws Exception {
-        checkStatusFile();
+    private void checkLastSync(TardisConfiguration.DataSourceConfig dataSourceConfig) throws Exception {
+        checkStatusFile(dataSourceConfig);
         if (!StringUtils.isEmpty(dataSourceConfig.getAge())) {
-            checkOkFile();
+            checkOkFile(dataSourceConfig);
         }
     }
 
-    private void checkStatusFile() throws Exception {
+    private void checkStatusFile(TardisConfiguration.DataSourceConfig dataSourceConfig) throws Exception {
         File statusFile = getFile(dataSourceConfig.getName() + ".status");
         String status = getStatus(statusFile);
 
@@ -46,7 +46,7 @@ public class SynchronizationHealthIndicator extends AbstractHealthIndicator {
             throw new Exception("The synchronization for " + dataSourceConfig.getName() + " failed with status " + status);
     }
 
-    private void checkOkFile() throws Exception {
+    private void checkOkFile(TardisConfiguration.DataSourceConfig dataSourceConfig) throws Exception {
         File okFile = getFile(dataSourceConfig.getName() + ".ok");
         Date okDate = new Date(okFile.lastModified());
         Long age = Long.parseLong(dataSourceConfig.getAge());

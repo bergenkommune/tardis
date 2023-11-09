@@ -38,8 +38,6 @@ public class RestService {
                            @RequestParam(required = false) String fromDate, @RequestParam(required = false) String toDate)
             throws IOException {
         try {
-            //TODO understand how this outputstreamworks
-            //This sets outputstream content type, like plain/text/ application/json
             OutputStream out = prepareOutputStream(request, response);
 
             if (isNotBlank(fromRevision) && isNotBlank(toRevision)) {
@@ -48,9 +46,8 @@ public class RestService {
                 DateFormat df = new UtcDateFormat();
                 tardis.getDiff(dataSourceName, tableName, df.parse(fromDate), df.parse(toDate), out);
             } else {
-                //TODO make a snapshot method in tardis
                 tardis.getSnapshot(dataSourceName, tableName, out);
-//               throw new IllegalArgumentException("You must provide either fromRevision and toRevision or fromDate and toDate query params");
+//              throw new IllegalArgumentException("You must provide either fromRevision and toRevision or fromDate and toDate query params");
             }
         } catch (HttpServerErrorException e) {
             LOG.error("Couldn't get changes", e);

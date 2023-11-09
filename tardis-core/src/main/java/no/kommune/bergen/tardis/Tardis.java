@@ -5,6 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.Properties;
@@ -45,6 +48,7 @@ public class Tardis {
 
     public void getDiff(String dataSourceName, String tableName, Date fromDate, Date toDate, OutputStream out) {
         Table table = configuration.getTable(dataSourceName, tableName);
+        System.out.println("table diff name : " + table.getFilename());
         assertTableNotNull(dataSourceName, tableName, table);
         changeLogCreator.getDiff(table.getFilename(), table.getPrimaryKeys(), fromDate, toDate, out);
     }
@@ -68,5 +72,42 @@ public class Tardis {
 
     public Properties optimizeStorage() {
         return snapshotStore.garbageCollect();
+    }
+
+    public void getSnapshot(String dataSourceName, String tableName, OutputStream out) throws IOException {
+        Table table = configuration.getTable(dataSourceName, tableName);
+        assertTableNotNull(dataSourceName, tableName, table);
+        System.out.println("table file name \n" + table.getFilename());
+
+        var inputStream = snapshotStore.getLatestSnapshot(table.getFilename());
+        if(inputStream != null){
+            System.out.println("input stream null check \n" + inputStream);
+        } else {
+            System.out.println("input stream null");
+        }
+
+//        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+//        String line;
+//        while (true) {
+//            try {
+//                if ((line = reader.readLine()) == null) break;
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//            // Process each line of text
+//            System.out.println(line);
+//        }
+
+        StringBuilder sb = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+        String line;
+
+        while ((line = reader.readLine()) != null) {
+            sb.append(line).append("\n");
+        }
+        String content = sb.toString();
+        System.out.println("fhgfghfhgfhgfhgf \n"+content);
+        reader.close();
+
     }
 }

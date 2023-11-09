@@ -38,6 +38,8 @@ public class RestService {
                            @RequestParam(required = false) String fromDate, @RequestParam(required = false) String toDate)
             throws IOException {
         try {
+            //TODO understand how this outputstreamworks
+            //This sets outputstream content type, like plain/text/ application/json
             OutputStream out = prepareOutputStream(request, response);
 
             if (isNotBlank(fromRevision) && isNotBlank(toRevision)) {
@@ -46,7 +48,9 @@ public class RestService {
                 DateFormat df = new UtcDateFormat();
                 tardis.getDiff(dataSourceName, tableName, df.parse(fromDate), df.parse(toDate), out);
             } else {
-                throw new IllegalArgumentException("You must provide either fromRevision and toRevision or fromDate and toDate query params");
+                //TODO make a snapshot method in tardis
+                tardis.getSnapshot(dataSourceName, tableName, out);
+//               throw new IllegalArgumentException("You must provide either fromRevision and toRevision or fromDate and toDate query params");
             }
         } catch (HttpServerErrorException e) {
             LOG.error("Couldn't get changes", e);
@@ -65,11 +69,13 @@ public class RestService {
     }
 
 
+
+
     @RequestMapping(method = RequestMethod.POST, value = "/optimize", produces = "text/plain; charset=utf-8")
     @ResponseBody
     public String optimizeStorage(HttpServletResponse response) throws IOException {
 
-        LOG.info("Storage optimization starting");
+        LOG.info("Storagesss optimization starting");
 
         try{
             StopWatch watch = new StopWatch();

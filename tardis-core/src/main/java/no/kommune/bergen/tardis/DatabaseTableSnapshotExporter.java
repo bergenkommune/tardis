@@ -1,11 +1,12 @@
 package no.kommune.bergen.tardis;
 
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -36,7 +37,7 @@ public class DatabaseTableSnapshotExporter {
         ) {
             metaData = resultSet.getMetaData();
             JsonFactory f = new JsonFactory();
-            g = f.createJsonGenerator(new File(workingDirectory + File.separator + filename), JsonEncoding.UTF8);
+            g = f.createGenerator(new FileOutputStream(workingDirectory + File.separator + filename), JsonEncoding.UTF8);
             g.setPrettyPrinter(new DiffablePrettyPrinter());
             while (resultSet.next()) {
                 toJson(resultSet);

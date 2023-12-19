@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Date;
 import java.util.Properties;
 
@@ -68,5 +68,11 @@ public class Tardis {
 
     public Properties optimizeStorage() {
         return snapshotStore.garbageCollect();
+    }
+
+    public void getSnapshot(String dataSourceName, String tableName, OutputStream out) {
+        Table table = configuration.getTable(dataSourceName, tableName);
+        assertTableNotNull(dataSourceName, tableName, table);
+        changeLogCreator.getSnapshot(table.getFilename(), out);
     }
 }

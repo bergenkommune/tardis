@@ -1,18 +1,17 @@
 package no.kommune.bergen.tardis;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @Component
 public class ChangeLogCreator {
@@ -34,9 +33,42 @@ public class ChangeLogCreator {
         createJsonDiffStream(primaryKeyColumns, diff, out);
     }
 
+    public void getSnapshot(String filename, OutputStream out){
+        InputStream inputStream = snapshotStore.getLatestSnapshot(filename);
+        createJsonSnapshotStream(inputStream, out);
+    }
+
+    private void createJsonSnapshotStream(InputStream inputStream, OutputStream out) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonGenerator g = createJsonGenerator(out, mapper);
+            g.writeStartArray();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    generateSnapshotRecord(g, line);
+                }
+            }
+
+            g.writeEndArray();
+            g.writeRaw("\n");
+            g.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void generateSnapshotRecord(JsonGenerator g, String line) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode recordNode = mapper.readTree(line);
+        g.writeObject(recordNode);
+    }
+
     private void createJsonDiffStream(Collection<String> primaryKeyColumns, byte[] diff, OutputStream out) {
         try {
-            JsonGenerator g = createJsonGenerator(out);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonGenerator g = createJsonGenerator(out, mapper);
 
             try(FilteredLinesReader deleted = new FilteredLinesReader(new InputStreamReader(new ByteArrayInputStream(diff), "UTF-8"), "-{");
                 FilteredLinesReader added = new FilteredLinesReader(new InputStreamReader(new ByteArrayInputStream(diff), "UTF-8"), "+{")) {
@@ -69,11 +101,10 @@ public class ChangeLogCreator {
             throw new RuntimeException(e);
         }
     }
-
-    public JsonGenerator createJsonGenerator(OutputStream out) throws IOException {
-        JsonGenerator g;
+    public JsonGenerator createJsonGenerator(OutputStream out, ObjectMapper mapper) throws IOException {
         JsonFactory f = new JsonFactory();
-        g = f.createJsonGenerator(out, JsonEncoding.UTF8);
+        JsonGenerator g = f.createGenerator(out, JsonEncoding.UTF8);
+        g.setCodec(mapper); // Set the ObjectCodec
         g.setPrettyPrinter(new DiffablePrettyPrinter());
         return g;
     }

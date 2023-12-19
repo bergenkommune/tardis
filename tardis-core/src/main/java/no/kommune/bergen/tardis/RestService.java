@@ -46,7 +46,7 @@ public class RestService {
                 DateFormat df = new UtcDateFormat();
                 tardis.getDiff(dataSourceName, tableName, df.parse(fromDate), df.parse(toDate), out);
             } else {
-                throw new IllegalArgumentException("You must provide either fromRevision and toRevision or fromDate and toDate query params");
+                tardis.getSnapshot(dataSourceName, tableName, out);
             }
         } catch (HttpServerErrorException e) {
             LOG.error("Couldn't get changes", e);
